@@ -1,0 +1,31 @@
+{% extends 'main/base.html' %}
+
+
+{% block title %}
+    Sign In
+{% endblock %}
+
+
+{% block content %}
+    <div class="mt-5 container">
+
+        <div class="card" style="width: 325px;">
+            <h4 class="card-header">Sign In</h4>
+            <div class="card-body">
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <input class="form-control" placeholder="Username" type="text" name="username" id="id_username">
+                    <input class="form-control mt-2" placeholder="Password" type="password" name="password" id="id_password">
+
+                    <input type="submit" class="btn btn-primary mt-2" value="Sign In">
+                </form>
+
+            </div>
+        </div>
+
+
+
+    </div>
+{% endblock %}
+

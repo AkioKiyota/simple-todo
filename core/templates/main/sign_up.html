@@ -1,0 +1,42 @@
+{% extends 'main/base.html' %}
+
+
+{% block title %}
+    Sign Up
+{% endblock %}
+
+
+{% block content %}
+    <div class="mt-5 container p-4">
+
+        <div class="card" style="width: 325px;">
+            <h4 class="card-header">Sign Up</h4>
+            <div class="card-body">
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div> {{ form.username }} </div>
+                    <div style="color: gray; margin-left: 15px; font-size: 12px;"> {{ form.username.help_text }} </div>
+                    {% if form.username.errors %} <div class="text-danger" style="font-size: 12px;"> {{ form.username.errors }} </div> {% endif %}
+
+                    <div class="mt-2"> {{ form.email }} </div>
+                    
+                    <div class="mt-2"> {{ form.password1 }} </div>
+
+                    {% if form.password1.errors %} 
+                        <div class="text-danger" style="font-size: 12px;"> {{ form.password1.errors }} </div>
+                    {% endif %}
+
+                    <div class="mt-2"> {{ form.password2 }} </div>
+                    {% if form.password2.errors %} <div class="text-danger" style="font-size: 12px;"> {{ form.password2.errors }} </div> {% endif %}
+
+                    <input type="submit" class="btn btn-primary mt-2" value="Sign Up">
+                </form>
+
+            </div>
+        </div>
+          
+
+    </div>
+{% endblock %}
+

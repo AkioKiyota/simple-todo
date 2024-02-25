@@ -1,0 +1,131 @@
+{% extends 'main/base.html' %}
+
+{% block styles %}
+    <style>
+
+        .m_input {
+            margin-left: 15px;
+            border: none;
+            background-color: rgba(0, 0, 0, 0);
+            resize: none;
+            display: flex;
+            white-space: nowrap;
+            height: 3svh;
+            width: 80%;
+        }
+        
+
+    </style>
+{% endblock %}
+
+{% block content %}
+ 
+
+<div class="d-flex">
+    <div class="" style="background-color: #f0f0f0; width: 70svw; height: 100svh;">
+        <div class="" style="width: 70svw; height: 5svh;">
+            <h4 style="margin: 4svh 0 0 6svw;">Project Name</h4>
+            <hr style="margin-left: 5svw; width: 20svw;">
+        </div>
+
+
+
+        <div class="d-flex flex-column" style="overflow: auto; scrollbar-width: thin; padding: 2svh 0 0 0; margin: 2svh 0 0 7svw; width: 63svw; height: 60svh;">
+
+            {% for todo_list in project.list_set.all %}
+                <div class="mb-5 pb-2 d-flex flex-column" style="border-bottom: 1px solid #bcbdbe; width: 45svw;">
+
+                    <div class="d-flex flex-column">
+                        {% for list_node in todo_list.listnode_set.all %}
+                        <div class="d-flex align-items-center">
+                            - <input oninput="edit_todo_list_node_on_change(this, '{{ list_node.id }}')" class="focus-ring shadow-none m_input" type="text" placeholder="your note here..." value="{{ list_node.content }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <a href="{% url 'main:create_todo_list_node' todo_list.id %}" class="btn ms-4 d-flex" style="width: fit-content;"><i class="bi bi-plus" style="font-size: larger;"></i></a>
+                </div>
+
+            {% endfor %}
+
+
+            <a href="{% url 'main:create_todo_list' project.id %}" class="btn d-flex" style="width: fit-content;"><i class="bi bi-plus" style="font-size: larger;"></i></a>
+        </div>
+
+
+    </div>
+    
+
+
+    
+    <div class="d-flex flex-column justify-content-between" style="background-color: #d3d3d3; width: 30svw; height: 100svh;">
+        <div class="m-5 m_border" style="border-color: #a0a0a0;">
+            <span class="px-3">{{ project.user.username }} <i>(admin)</i></span>
+            <hr>
+            <div class="px-3">
+                {% for user in allowed_users %}
+                    <div class="px-2 d-flex align-items-center justify-content-between">
+                    <span>{{ user.username }} <i> (allowed)</i> </span>
+                    {% if request.user == project.user %}
+                    <form action="{% url 'main:remove_allowed_user' %}" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="project_id" value="{{ project.id }}">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <button type="submit" class="ms-3 btn btn-danger">Remove</button>
+                    </form>
+                    {% endif %}
+                    </div>
+                    <hr>
+                {% endfor %}
+            </div>
+
+        
+        </div>
+
+
+
+
+        {% if request.user == project.user %}
+        <div class="m-5 m_border" style="border-color: #a0a0a0;">
+
+            
+            <hr>
+            <form class="my-3 px-4 d-flex align-items-center justify-content-between" action="{% url 'main:add_allowed_user' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="project_id" value="{{ project.id }}">
+                <input class="focus-ring shadow-none m_border px-2" class="m-2 p-2" type="text" name="username" id="username_input" placeholder="exact username!">
+                <button class="btn m-2 px-3 py-1" type="submit">Add</button>
+            </form>
+            <div class="mx-4 pb-3 text-danger" style="font-size: 12px;">Debug: sadbsbadsabdbasbdasd</div>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+
+<script>
+
+    function edit_todo_list_node_on_change(obj, id) {
+        content = obj.value;
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'main:edit_todo_list_node'  %}",
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'todo_list_node_id': id,
+                'content': content
+            },
+            success: function (response) {
+                console.log(response);
+            },
+            error: function (response) {
+                console.log(response);
+            }
+        });
+    }
+
+</script>
+
+{% endblock %}
+
+

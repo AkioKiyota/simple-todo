@@ -1,0 +1,70 @@
+{% block style %}
+
+<style>
+    .m_navbar {
+        background-image: linear-gradient(to bottom, #2564cf, #1f56b4);
+        padding: 5px 50px;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        font-size: 18px;
+        height: 4svh;
+
+    }
+
+    .title{
+        margin-bottom: 0 !important;
+    }
+
+    .m_icon {
+        color: white;
+        padding: 10px 25px;
+
+        border-radius: 5px;
+
+        transition: all ease .3s;
+    }
+
+    .m_icon:hover {
+        background-color: rgba(0, 0, 0, .1);
+    }
+
+    .logo {
+        padding: 15px 0;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .logo:hover{
+        cursor: pointer;
+    }
+
+    .menu{
+        display: flex;
+        align-items: center;
+    }
+
+
+</style>
+
+{% endblock %}
+
+
+<div class="m_navbar">
+    <span class="logo">Live To Do</span>
+    <div class="menu">
+        <a href="#"><i class="m_icon fa-solid fa-wrench"></i></a>
+        <a href="#"><i class="m_icon fa-solid fa-question"></i></a>
+        
+        {% if request.user.is_authenticated %}
+        <a href="#"><i class="m_icon fa-solid fa-user"></i></a>
+        <a href="{% url 'profiles:sign_out' %}"><i class="m_icon fa-solid fa-arrow-right-from-bracket"></i></a>
+        {% else %}
+        <a href="{% url 'profiles:sign_in' %}"><i class="m_icon fa-solid fa-sign-in"></i></a>
+        {% endif %}
+    </div>
+</div>
+
