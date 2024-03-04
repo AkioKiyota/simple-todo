@@ -1,60 +1,7 @@
+{% load static %}
 {% block style %}
 
-<style>
-    .title{
-        margin-bottom: 0 !important;
-    }
-
-    .m_sidebar{
-        display: flex;
-        flex-direction: column;
-        background-color: white;
-        padding: 60px 0;
-    }
-    
-    ul{
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .list-item{
-        padding: 15px 6px;
-        color: #8e8e8d;
-        font-size: 14px;
-        transition: all ease .3s;
-    }
-
-    .list-item:hover{
-        cursor: pointer;
-        background-color: rgba(0, 0, 0, .1);
-        color: #292827;
-    }
-
-    .list_icon{
-        padding: 0 20px;
-        font-size: 14px;
-    }
-
-    .m_icon:hover {
-        background-color: rgba(0, 0, 0, .1);
-    }
-
-    .logo {
-        padding: 15px 0;
-        color: white;
-    }
-
-    .logo:hover{
-        cursor: pointer;
-    }
-
-    a{
-        text-decoration: none;
-        color: inherit;
-    }
-
-</style>
+<link rel="stylesheet" href="{% static 'profiles/sidebar.css' %}">
 
 {% endblock %}
 
@@ -74,11 +21,13 @@
     </ul>
     <hr width="85%" color="#e1dfdd">
     <ul>
-        <a href="#"><li style="color: #2564cf;" class="list-item"><i class="list_icon fa-regular fa-plus"></i> New List</li></a>
+        <a href="#"><li class="list-item"><i class="list_icon fa-regular fa-circle"></i> New Project!</li></a>
+        <a href="#"><li style="color: #2564cf;" class="list-item"><i class="list_icon fa-regular fa-plus"></i> New Project</li></a>
     </ul>
 </div>
 
 <script>
+    // Change the hard-coded part later!
     if(window.location.pathname === '{% url "index:today" %}'){
         document.getElementById('todayBtn').style.backgroundColor = '#eff6fc';
         document.getElementById('todayBtn').style.borderLeft = '2px solid #2564cf';
