@@ -5,10 +5,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, JsonResponse
 
 from .forms import SignUpForm
-
+from .models import Profile
+from index.models import Project, Group, ListNode
 
 def sign_in(request):
-
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
@@ -29,6 +29,10 @@ def sign_up(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
+            profile = Profile.objects.create(user=user)
+            profile.save()
+            today_project = Project.objects.create(user=profile, is_today=True, title="Today")
+            
             login(request=request, user=user)
             return redirect('index:index')
     else:

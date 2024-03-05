@@ -6,6 +6,8 @@ app_name = 'index'
 urlpatterns = [
     path('', views.index, name='index'),
     path('today/', views.today, name='today'),
+    path('project/<slug:slug>/', views.project, name='project'),
+    
     
     # Functions
     path('create_new_project', views.create_new_project, name='create_new_project'),
