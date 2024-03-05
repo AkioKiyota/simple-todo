@@ -1,19 +1,21 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+from django.http import HttpResponse
 from datetime import date
 
 from .models import Project, Group, ListNode
+from profiles.models import Profile
 
 def index(request):
     return render(request, 'index/index.html', {})
 
 def today(request):
-    day = date.today().strftime('%d/%m/%Y')
-    return render(request, 'index/today.html', {"day": day})
+    return render(request, 'index/today.html', {"day": date.today().strftime('%d/%m/%Y')})
 
 def project(request, slug):
-    if request.user.is_authenticated and request.user.profile.projects_allowed_in.filter(slug=slug).exists():
-        project = Project.objects.get(slug=slug)
-        return render(request, 'index/project.html', {"project": project})
+    project = Project.objects.get(slug=slug)
+    if (request.user.is_authenticated and request.user.profile.projects_allowed_in.filter(slug=slug).exists()) or request.user.profile == project.profile:
+        return render(request, 'index/project.html', {"project": project, "created_at": project.created_at.strftime('%d/%m/%Y')})
     
     else:
         return redirect('index:today')
@@ -31,3 +33,38 @@ def create_new_group(request):
 
 def create_new_list_node(request):
     return redirect('index:today')
+
+def edit_project_name(request, slug):
+    project = Project.objects.get(slug=slug)
+    if request.method == 'POST' and (request.user.profile.projects_allowed_in.filter(slug=slug).exists() or request.user.profile == project.profile):
+        project.title = request.POST['title']
+        project.save()
+        return redirect('index:project', slug=slug)
+    else:
+        return HttpResponse("You are not allowed to access this page.")
+
+def add_allowed_user(request, slug):
+    project = Project.objects.get(slug=slug)
+    if request.method == 'POST' and request.user.profile == project.profile:
+        username = request.POST['username']
+        if User.objects.filter(username=username).exists():
+            project.allowed_users.add(User.objects.get(username=username).profile)
+            project.save()
+            return HttpResponse(f"User {username} added to the project {project.title}.")
+        else:
+            return HttpResponse("User not found.")
+    else:
+        return HttpResponse("You are not allowed to access this page.")
+
+def remove_allowed_user(request, slug):
+    project = Project.objects.get(slug=slug)
+    if request.method == 'POST' and request.user.profile == project.profile:
+        username = request.POST['username']
+        if User.objects.filter(username=username).exists():
+            project.allowed_users.remove(User.objects.get(username=username).profile)
+            project.save()
+            return redirect('index:project', slug=slug)
+        else:
+            return HttpResponse("User not found.")
+    else:
+        return HttpResponse("You are not allowed to access this page.")

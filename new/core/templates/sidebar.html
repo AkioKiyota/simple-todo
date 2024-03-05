@@ -21,7 +21,13 @@
     </ul>
     <hr width="85%" color="#e1dfdd">
     <ul>
+
+        {% for i in request.user.profile.projects.all %}
+            <a href="{% url 'index:project' i.slug %}"><li class="list-item"><i class="list_icon fa-regular fa-circle"></i> {{ i.title }} </li></a>
+        {% endfor %}
+<!-- 
         <a href="#"><li class="list-item"><i class="list_icon fa-regular fa-circle"></i> New Project!</li></a>
+-->
         <a href="#"><li style="color: #2564cf;" class="list-item"><i class="list_icon fa-regular fa-plus"></i> New Project</li></a>
     </ul>
 </div>

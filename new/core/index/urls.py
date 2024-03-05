@@ -10,7 +10,11 @@ urlpatterns = [
     
     
     # Functions
-    path('create_new_project', views.create_new_project, name='create_new_project'),
-    path('create_new_group', views.create_new_group, name='create_new_group'),
-    path('create_new_list_node', views.create_new_list_node, name='create_new_list_node'),
+    path('post/create_new_project', views.create_new_project, name='create_new_project'),
+    path('post/create_new_group', views.create_new_group, name='create_new_group'),
+    path('post/create_new_list_node', views.create_new_list_node, name='create_new_list_node'),
+    
+    path('post/edit_project_name/<slug:slug>/', views.edit_project_name, name='edit_project_name'),
+    path('post/add_allowed_user/<slug:slug>/', views.add_allowed_user, name='add_allowed_user'),
+    path('post/remove_allowed_user/<slug:slug>/', views.remove_allowed_user, name='remove_allowed_user'),
 ]

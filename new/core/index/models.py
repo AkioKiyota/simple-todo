@@ -13,7 +13,8 @@ def custom_slugify(value):
 class Project(models.Model):
     # Constant
     is_today = models.BooleanField(default=False)
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='projects')
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     
     def custom_populate_from(self):
         return self.title
