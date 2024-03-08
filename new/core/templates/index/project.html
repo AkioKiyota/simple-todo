@@ -56,11 +56,20 @@
         background-color: white;
         padding: 0 20px;
         border-radius: 5px;
-        box-shadow: 0px 0px 10px -3px rgba(0,0,0,0.15);
+        box-shadow: 0px 0px 10px -3px rgba(0,0,0,0.35);
     
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        align-items: start;
         gap: 10px;
+
+        padding: 10px;
+    }
+
+    .todo-text-status{
+        font-size: 12px;
+        color: #8e8e8d;
+        margin: 0 25px;
     }
     
     .m_checkbox{
@@ -70,14 +79,8 @@
     
     .todo-inp-field{
         padding: 10px;
-        margin: 5px 0;
-        border: none;
         border-radius: 5px;
         flex-grow: 1;
-    }
-    
-    .todo-inp-field:focus{
-        outline: none;
     }
     
     .group{
@@ -179,7 +182,7 @@
                     <input type="text" id="user_to_be_allowed" class="input-field" placeholder="Exact User Name">
                     <button id="add_allowed_user_btn" class="m_btn"> Add User </button>
                 </div>
-                <div style="color: red; margin: 10px; font-size: 12px;" id="error_text">Error Text</div>
+                <div style="color: red; margin: 10px; font-size: 12px; display: none;" id="error_text">Error Text</div>
                 <!-- list of users here add remove btn next to user -->
             </form>
             <hr color="#e1dfdd">
@@ -203,26 +206,29 @@
         </div>
         <div>
             <button class="m_btn" id="edit_btn">Edit Project</button>
-            <button class="m_btn">Add Task</button>
-            <button class="m_btn">Add Group</button>
+            <button id="add_list_node_btn" class="m_btn">Add ListNode</button>
+            <button id="add_group_btn" class="m_btn">Add Group</button>
         </div>
     </div>
     <div class="todo-items">
 
-<!-- Todo Text Cards without a group
-        <div class="todo-text-card">
-            <input class="m_checkbox" type="checkbox" name="" id="">
-            <input class="todo-inp-field" autocomplete="off" maxlength="255" type="text">
-        </div>
-        <div class="todo-text-card">
-            <input class="m_checkbox" type="checkbox" name="" id="">
-            <input class="todo-inp-field" autocomplete="off" maxlength="255" type="text">
-        </div>
-        <div class="todo-text-card">
-            <input class="m_checkbox" type="checkbox" name="" id="">
-            <input class="todo-inp-field" autocomplete="off" maxlength="255" type="text">
-        </div>
--->
+        {% for list_node in list_nodes.all %}
+            <div class="todo-text-card">
+                <div style="display: flex; align-items:center; width: 100%;">
+                    <input class="m_checkbox" type="checkbox" name="" id="">
+                    <input class="todo-inp-field" style="font-size: medium;" autocomplete="off" maxlength="255" type="text">
+                </div>
+                <div class="todo-text-status">Status: {{ list_node.last_action }} </div>
+            </div>
+        {% endfor %}
+
+<!--         <div class="todo-text-card">
+            <div style="display: flex; align-items:center; width: 100%;">
+                <input class="m_checkbox" type="checkbox" name="" id="">
+                <input class="todo-inp-field" style="font-size: medium;" autocomplete="off" maxlength="255" type="text">
+            </div>
+            <div class="todo-text-status">Status: </div>
+        </div> -->
 
 <!-- 
         <div class="group">
@@ -258,6 +264,67 @@
 {% block script %}
 
 <script>
+    const project_slug = '{{ project.slug }}';
+    const project_id = '{{ project.id }}';
+    const current_username = '{{ request.user.username }}';
+
+    const chatSocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/project/'
+        + project_slug
+        + '/'
+    );
+
+    chatSocket.onopen = function(e) {
+        console.log('onopen')
+    }
+
+    chatSocket.onmessage = function(e){
+        data = e.data
+        data = JSON.parse(data)
+        console.log(data)
+        // {"action": "add_list_node", "room": "test-project", "content": "", "username": "qzen"}
+
+        // <div class="todo-text-card">
+        //     <input class="m_checkbox" type="checkbox" name="" id="">
+        //     <input class="todo-inp-field" autocomplete="off" maxlength="255" type="text">
+        // </div>
+        action = data['action']
+        console.log(action == 'add_list_node')
+        if (action == 'add_list_node'){
+            const todoItems = document.querySelector('.todo-items')
+            const todoTextCard = document.createElement('div')
+            todoTextCard.classList.add('todo-text-card')
+            todoTextCard.innerHTML = `
+                    <div style="display: flex; align-items:center; width: 100%;">
+                        <input class="m_checkbox" type="checkbox" name="" id="">
+                        <input class="todo-inp-field" style="font-size: medium;" autocomplete="off" maxlength="255" type="text">
+                    </div>
+                    <div class="todo-text-status">Status: Created by ${data['username']} </div>
+            `
+            todoItems.insertBefore(todoTextCard, todoItems.firstChild)
+        }
+    }
+
+    chatSocket.onclose = function(e) {
+        console.log('onclose')
+    }
+
+    const add_list_node_btn = document.getElementById('add_list_node_btn')
+
+    add_list_node_btn.addEventListener('click', function(){
+        chatSocket.send(JSON.stringify({
+            'action': 'add_list_node',
+            'room': project_slug,
+            'project_id': project_id,
+            'content': '',
+            'username': current_username,
+        }))
+
+    });
+
+
     const project_edit_btn = document.getElementById('edit_btn')
     const edit_project_popup = document.getElementById('edit_project_popup')
     const edit_project = document.getElementById('edit_project')
@@ -318,14 +385,18 @@
                     'username': user_to_be_allowed.value,
                 },
                 success: function(data){
-                    console.log(data)
-                    allowed_users_list.innerHTML += `
-                        <div style="padding: 10px; border: #8e8e8d 1px solid ; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
-                            <span>${user_to_be_allowed.value}</span>
-                            <button onclick="remove_allowed_user('${user_to_be_allowed.value}')" class="text-btn">Remove</button>
-                        </div>
-                    `
-                    user_to_be_allowed.value = ''
+                    if (data.status =='success'){
+                        allowed_users_list.innerHTML += `
+                            <div style="padding: 10px; border: #8e8e8d 1px solid ; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                                <span>${user_to_be_allowed.value}</span>
+                                <button onclick="remove_allowed_user('${user_to_be_allowed.value}')" class="text-btn">Remove</button>
+                            </div>
+                        `
+                        user_to_be_allowed.value = ''
+                    } else {
+                        error_text.style.display = 'block'
+                        error_text.innerText = data.message
+                    }
                 },
                 error: function(data){
                     console.log(data)
@@ -346,9 +417,23 @@
                 'username': username,
             },
             success: function(data){
-                // remove the user from the list
-                const user = document.querySelector(`#allowed_users_list > div > span:contains('${username}')`)
-                user.parentElement.remove()
+                if (data.status == 'success'){
+                    // remove the user from the list
+                    let user;
+                    const spans = document.querySelectorAll("span");
+                    spans.forEach(function(span) {
+                        if (span.textContent === username) {
+                            user = span;
+                        }
+                    });
+                    
+                    if (user) {
+                        user.parentElement.remove();
+                    }
+                } else {
+                    error_text.style.display = 'block'
+                    error_text.innerText = data.message
+                }
             },
             error: function(data){
                 console.log(data)

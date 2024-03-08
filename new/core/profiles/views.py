@@ -31,7 +31,7 @@ def sign_up(request):
             user = form.save()
             profile = Profile.objects.create(user=user)
             profile.save()
-            today_project = Project.objects.create(user=profile, is_today=True, title="Today")
+            today_project = Project.objects.create(profile=profile, is_today=True, title="Today")
             
             login(request=request, user=user)
             return redirect('index:index')

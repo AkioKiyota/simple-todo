@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from datetime import date
 
 from .models import Project, Group, ListNode
@@ -14,8 +14,9 @@ def today(request):
 
 def project(request, slug):
     project = Project.objects.get(slug=slug)
+    list_nodes = ListNode.objects.filter(project=project).order_by('-id')
     if (request.user.is_authenticated and request.user.profile.projects_allowed_in.filter(slug=slug).exists()) or request.user.profile == project.profile:
-        return render(request, 'index/project.html', {"project": project, "created_at": project.created_at.strftime('%d/%m/%Y')})
+        return render(request, 'index/project.html', {"project": project, 'list_nodes': list_nodes, "created_at": project.created_at.strftime('%d/%m/%Y')})
     
     else:
         return redirect('index:today')
@@ -50,11 +51,11 @@ def add_allowed_user(request, slug):
         if User.objects.filter(username=username).exists():
             project.allowed_users.add(User.objects.get(username=username).profile)
             project.save()
-            return HttpResponse(f"User {username} added to the project {project.title}.")
+            return JsonResponse({"status": "success", "message": "User added."})
         else:
-            return HttpResponse("User not found.")
+            return JsonResponse({"status": "error", "message": "User not found."})
     else:
-        return HttpResponse("You are not allowed to access this page.")
+        return JsonResponse({"status": "error", "message": "You are not allowed to do that!"})
 
 def remove_allowed_user(request, slug):
     project = Project.objects.get(slug=slug)
@@ -63,8 +64,8 @@ def remove_allowed_user(request, slug):
         if User.objects.filter(username=username).exists():
             project.allowed_users.remove(User.objects.get(username=username).profile)
             project.save()
-            return redirect('index:project', slug=slug)
+            return JsonResponse({"status": "success", "message": "User removed."})
         else:
-            return HttpResponse("User not found.")
+            return JsonResponse({"status": "error", "message": "User not found."})
     else:
-        return HttpResponse("You are not allowed to access this page.")
+        return JsonResponse({"status": "error", "message": "You are not allowed to do that!"})

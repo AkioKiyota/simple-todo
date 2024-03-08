@@ -35,11 +35,12 @@ class Group(models.Model):
 
 class ListNode(models.Model):
     # Constant
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     
     # Variable
     is_checked = models.BooleanField(default=False)
     content = models.TextField(default="Your note here.")
     group = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
-    
+    last_action = models.CharField(max_length=258, default="", blank=True, null=True)
 
