@@ -213,10 +213,10 @@
     <div class="todo-items">
 
         {% for list_node in list_nodes.all %}
-            <div class="todo-text-card">
+            <div class="todo-text-card" data-list-node-id="{{ list_node.id }}">
                 <div style="display: flex; align-items:center; width: 100%;">
-                    <input class="m_checkbox" type="checkbox" name="" id="">
-                    <input class="todo-inp-field" style="font-size: medium;" autocomplete="off" maxlength="255" type="text">
+                    <input class="m_checkbox" onchange="edit_list_node(this)" type="checkbox" name="" id="">
+                    <input class="todo-inp-field" oninput="edit_list_node(this)" style="font-size: medium;" placeholder="Text Here" value="{{ list_node.content }}" autocomplete="off" maxlength="255" type="text">
                 </div>
                 <div class="todo-text-status">Status: {{ list_node.last_action }} </div>
             </div>
@@ -284,31 +284,50 @@
         data = e.data
         data = JSON.parse(data)
         console.log(data)
-        // {"action": "add_list_node", "room": "test-project", "content": "", "username": "qzen"}
-
-        // <div class="todo-text-card">
-        //     <input class="m_checkbox" type="checkbox" name="" id="">
-        //     <input class="todo-inp-field" autocomplete="off" maxlength="255" type="text">
-        // </div>
         action = data['action']
-        console.log(action == 'add_list_node')
         if (action == 'add_list_node'){
+            // {"action": "add_list_node", "room": "test-project", "list_node_id": 1, "username": "qzen"}
+
             const todoItems = document.querySelector('.todo-items')
             const todoTextCard = document.createElement('div')
             todoTextCard.classList.add('todo-text-card')
+            todoTextCard.setAttribute('data-list-node-id', data['list_node_id'])
             todoTextCard.innerHTML = `
                     <div style="display: flex; align-items:center; width: 100%;">
                         <input class="m_checkbox" type="checkbox" name="" id="">
-                        <input class="todo-inp-field" style="font-size: medium;" autocomplete="off" maxlength="255" type="text">
+                        <input class="todo-inp-field" oninput="edit_list_node(this)" style="font-size: medium;" placeholder="Text Here" autocomplete="off" maxlength="255" type="text">
                     </div>
                     <div class="todo-text-status">Status: Created by ${data['username']} </div>
             `
             todoItems.insertBefore(todoTextCard, todoItems.firstChild)
+        }else if (action == 'edit_list_node_content'){
+            const todo_text_card = document.getElementsByClassName('todo-text-card').querySelector(`[data-list-node-id="${action['list_node_id']}"]`)
+            const todo_inp_field = todo_text_card.querySelector('.todo-inp-field')
+            if (action['username'] != current_username){
+                todo_inp_field.value = action['content']
+            }
+
         }
     }
 
     chatSocket.onclose = function(e) {
         console.log('onclose')
+    }
+
+    function edit_list_node(obj){
+        chatSocket.send(JSON.stringify({
+            'action': 'edit_list_node_content',
+            'room': project_slug,
+            'list_node_id': obj.parentElement.parentElement.getAttribute('data-list-node-id'),
+            'username': current_username,
+            'content': obj.value,
+
+        }))
+
+    }
+
+    function onchangetestfunc(obj){
+        console.log(obj)
     }
 
     const add_list_node_btn = document.getElementById('add_list_node_btn')
@@ -317,8 +336,6 @@
         chatSocket.send(JSON.stringify({
             'action': 'add_list_node',
             'room': project_slug,
-            'project_id': project_id,
-            'content': '',
             'username': current_username,
         }))
 

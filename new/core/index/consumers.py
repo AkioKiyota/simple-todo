@@ -31,7 +31,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
         project = Project.objects.get(slug=room)
         new_list_node = ListNode.objects.create(profile=profile, project=project, last_action=f"Created by {username} ")
         new_list_node.save()
-        print("List node saved")
+        
+        return new_list_node.id
+    
+    @sync_to_async
+    def edit_list_node_content(self, list_node_id, content):
+        list_node = ListNode.objects.get(id=list_node_id)
+        list_node.content = content
+        list_node.last_action = f"Edited by {list_node.profile.user.username}"
+        list_node.save()
+        
+        return list_node.id
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -41,7 +51,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             username = data['username']
             room = data['room']
 
-            await self.save_list_node(username, room)
+            list_node_id = await self.save_list_node(username, room)
             
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -50,22 +60,58 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'action': action,
                     
                     'room': room,
+                    'list_node_id': list_node_id,
                     'username': username,
-                }
-        
-        )
+                })
+            
+        elif action == 'edit_list_node_content':
+            list_node_id = data['list_node_id']
+            room = data['room']
+            username = data['username']
+            content = data['content']
+            
+            await self.edit_list_node_content(list_node_id, content)
+
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'edit_list_node_content_type',
+                    'action': action,
+                    
+                    'room': room,
+                    'list_node_id': list_node_id,
+                    'username': username,
+                    'content': content,
+                })
 
     async def add_list_node_type(self, event):
-
         action = event['action']
         
         room = event['room']
+        list_node_id = event['list_node_id']
         username = event['username']
         
         await self.send(text_data=json.dumps({
             'action': action,
             
             'room': room,
+            'list_node_id': list_node_id,
             'username': username,
         }))
+        
+    async def edit_list_node_content_type(self, event):
+        action = event['action']
+        
+        list_node_id = ['list_node_id']
+        room = event['room']
+        username = event['username']
+        content = event['content']
 
+        await self.send(text_data=json.dumps({
+            'action': action,
+            
+            'list_node_id': list_node_id,
+            'room': room,
+            'username': username,
+            'content': content,    
+        }))
