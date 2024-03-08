@@ -29,12 +29,6 @@ def create_new_project(request):
     
     return redirect('index:today')
 
-def create_new_group(request):
-    return redirect('index:today')
-
-def create_new_list_node(request):
-    return redirect('index:today')
-
 def edit_project_name(request, slug):
     project = Project.objects.get(slug=slug)
     if request.method == 'POST' and (request.user.profile.projects_allowed_in.filter(slug=slug).exists() or request.user.profile == project.profile):

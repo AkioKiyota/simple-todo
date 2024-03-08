@@ -102,7 +102,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def edit_list_node_content_type(self, event):
         action = event['action']
         
-        list_node_id = ['list_node_id']
+        list_node_id = event['list_node_id']
         room = event['room']
         username = event['username']
         content = event['content']

@@ -222,14 +222,6 @@
             </div>
         {% endfor %}
 
-<!--         <div class="todo-text-card">
-            <div style="display: flex; align-items:center; width: 100%;">
-                <input class="m_checkbox" type="checkbox" name="" id="">
-                <input class="todo-inp-field" style="font-size: medium;" autocomplete="off" maxlength="255" type="text">
-            </div>
-            <div class="todo-text-status">Status: </div>
-        </div> -->
-
 <!-- 
         <div class="group">
             <div class="group-header">
@@ -301,10 +293,18 @@
             `
             todoItems.insertBefore(todoTextCard, todoItems.firstChild)
         }else if (action == 'edit_list_node_content'){
-            const todo_text_card = document.getElementsByClassName('todo-text-card').querySelector(`[data-list-node-id="${action['list_node_id']}"]`)
-            const todo_inp_field = todo_text_card.querySelector('.todo-inp-field')
-            if (action['username'] != current_username){
-                todo_inp_field.value = action['content']
+            // {"action": "edit_list_node_content", "room": "test-project", "list_node_id": 1, "username": "qzen", "content": "new content"}
+            const todo_text_cards = document.getElementsByClassName('todo-text-card')
+            for (var i = 0; i < todo_text_cards.length; i++) {
+                if (todo_text_cards[i].getAttribute('data-list-node-id') == data['list_node_id']) {
+                    var todo_text_card = todo_text_cards[i];
+                    const todo_inp_field = todo_text_card.querySelector('.todo-inp-field')
+                    todo_text_card.querySelector('.todo-text-status').innerText = `Status: Last edited by ${data['username']}`
+                    if (data['username'] != current_username){
+                        todo_inp_field.value = data['content']
+                    }
+                    break;
+                }
             }
 
         }
