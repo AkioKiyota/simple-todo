@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %} ✨ Today {% endblock %}
 
@@ -211,7 +212,37 @@
         </div>
     </div>
     <div class="todo-items">
+        {% for x in objects %}
 
+            {% if x|instance_of:"index.Group" %}
+                <div class="group">
+                    <div class="group-header">
+                        <div class="group-btn" data-group-header-id="1">
+                            <i class="fa-solid fa-angle-down" style="padding: 0 10px;"></i> {{ x.title }} <span style="padding-left: 10px; font-size: 14px;">{{ x.list_nodes.all.count }}</span>
+                        </div>
+                        <span style="font-size: 14px; padding-left: 12px; text-decoration: underline;">Add Task</span>
+                    </div>
+
+                    <div class="group-content">
+                        {% for list_node in x.list_nodes.all %}
+                            <div class="todo-text-card" data-list-node-id="{{ list_node.id }}">
+                                <div style="display: flex; align-items:center; width: 100%;">
+                                    <input class="m_checkbox" onchange="edit_list_node(this)" type="checkbox" name="" id="">
+                                    <input class="todo-inp-field" oninput="edit_list_node(this)" style="font-size: medium;" placeholder="Text Here" value="{{ list_node.content }}" autocomplete="off" maxlength="255" type="text">
+                                </div>
+                                <div class="todo-text-status">Status: {{ list_node.last_action }} </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <hr width="100%" color="#e1dfdd">
+                </div>
+            {% endif %}
+
+
+        {% endfor %}
+
+
+<!-- 
         {% for list_node in list_nodes.all %}
             <div class="todo-text-card" data-list-node-id="{{ list_node.id }}">
                 <div style="display: flex; align-items:center; width: 100%;">
@@ -222,6 +253,7 @@
             </div>
         {% endfor %}
 
+ -->
 <!-- 
         <div class="group">
             <div class="group-header">

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 from datetime import date
+from itertools import chain
 
 from .models import Project, Group, ListNode
 from profiles.models import Profile
@@ -14,9 +15,18 @@ def today(request):
 
 def project(request, slug):
     project = Project.objects.get(slug=slug)
-    list_nodes = ListNode.objects.filter(project=project).order_by('-id')
+    list_nodes = ListNode.objects.filter(project=project).all()
+    groups = Group.objects.filter(project=project).all()
+    
+    objects = sorted(
+        chain(list_nodes, groups),
+        key=lambda object: object.created_at,
+        reverse=True
+    )
+    
+
     if (request.user.is_authenticated and request.user.profile.projects_allowed_in.filter(slug=slug).exists()) or request.user.profile == project.profile:
-        return render(request, 'index/project.html', {"project": project, 'list_nodes': list_nodes, "created_at": project.created_at.strftime('%d/%m/%Y')})
+        return render(request, 'index/project.html', {"project": project, 'objects': objects, "created_at": project.created_at.strftime('%d/%m/%Y')})
     
     else:
         return redirect('index:today')
@@ -24,10 +34,11 @@ def project(request, slug):
 # Functions
 def create_new_project(request):
     if request.user.is_authenticated:
-        project = Project.objects.create(user=request.user.profile, is_today=False, title="⚡ Your New Project!")
+        project = Project.objects.create(profile=request.user.profile, is_today=False, title="⚡ Your New Project!")
+        slug = project.slug
         project.save()
     
-    return redirect('index:today')
+    return redirect('index:project', slug=slug)
 
 def edit_project_name(request, slug):
     project = Project.objects.get(slug=slug)
