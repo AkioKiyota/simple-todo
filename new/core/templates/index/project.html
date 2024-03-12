@@ -5,6 +5,7 @@
 {% block title %} ✨ Today {% endblock %}
 
 {% block style %}
+
 <link rel="stylesheet" href="{% static 'index/today.css' %}">
 
 <!-- Keep it here for now -->
@@ -13,6 +14,9 @@
     .index{
         padding: 10px 30px;
         display: flex;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
         flex-direction: column;
         gap: 20px;
         box-shadow: inset 5px 0px 10px -3px rgba(0,0,0,0.15);
@@ -80,8 +84,10 @@
     
     .todo-inp-field{
         padding: 10px;
+        background-color: rgba(0, 0, 0, 0);
         border-radius: 5px;
         flex-grow: 1;
+        height: 0;
     }
     
     .group{
@@ -95,13 +101,13 @@
     
         width: fit-content;
         padding: 10px;
+        height: 20px;
         border-radius: 5px;
-        cursor: pointer;
         user-select: none;
         color: #292827;
     
     }
-    
+
     .group-content{
         display: flex;
         flex-direction: column;
@@ -117,9 +123,14 @@
     
     .text-btn{
         border: none;
+        border-radius: 5px;
         background-color: rgba(0, 0, 0, 0);
         text-decoration: underline;
         cursor: pointer;
+    }
+
+    .text-btn:hover{
+        background-color: rgba(0, 0, 0, 0.1);
     }
     
     #edit_project_popup{
@@ -159,6 +170,8 @@
         border-radius: 5px;
 
     }
+
+
 
 
 </style>
@@ -214,13 +227,20 @@
     <div class="todo-items">
         {% for x in objects %}
 
-            {% if x|instance_of:"index.Group" %}
+            {% if x|is_instance_of:"index.models.Group" %}
                 <div class="group">
-                    <div class="group-header">
-                        <div class="group-btn" data-group-header-id="1">
-                            <i class="fa-solid fa-angle-down" style="padding: 0 10px;"></i> {{ x.title }} <span style="padding-left: 10px; font-size: 14px;">{{ x.list_nodes.all.count }}</span>
+                    <div class="group-header" style="justify-content: space-between; width: 100%;">
+                        <div class="group-header">
+                            <div class="group-btn" data-group-id="{{ x.id }}">
+                                <i class="fa-solid fa-angle-down" style="padding: 0 10px;"></i>
+                                <span id="groupTitle">{{ x.title }}</span>
+                                <span style="padding-left: 10px; font-size: 14px;">{{ x.list_nodes.all.count }}</span>
+                            </div>
+                            <span style="font-size: 14px; padding-left: 12px; text-decoration: underline;">Add Task</span>
+                            <span onclick="toggle_target_object(this.nextElementSibling)" style="font-size: 14px; padding-left: 12px; text-decoration: underline;">Edit</span>
+                            <input oninput="link_inp_to_obj(this, this.parentElement.firstElementChild.firstElementChild.nextElementSibling)" maxlength="32" type="text" name="" id="edit-group-title" class="todo-inp-field" value="{{ x.title }}" style="display: none; border-radius: 0; border-bottom: #8e8e8d 1px solid; margin: 0 10px">
                         </div>
-                        <span style="font-size: 14px; padding-left: 12px; text-decoration: underline;">Add Task</span>
+                        <span onclick="delete_group(this)" style="font-size: 14px; margin-right: 25px; text-decoration: underline; color: red;">Delete Group</span>
                     </div>
 
                     <div class="group-content">
@@ -229,6 +249,10 @@
                                 <div style="display: flex; align-items:center; width: 100%;">
                                     <input class="m_checkbox" onchange="edit_list_node(this)" type="checkbox" name="" id="">
                                     <input class="todo-inp-field" oninput="edit_list_node(this)" style="font-size: medium;" placeholder="Text Here" value="{{ list_node.content }}" autocomplete="off" maxlength="255" type="text">
+                                    <div class="card-optios">
+                                        
+                                        <button class="text-btn" onclick="toggle_options_panel(this)" style="padding: 0 5px; text-decoration: none;">...</button>
+                                    </div>
                                 </div>
                                 <div class="todo-text-status">Status: {{ list_node.last_action }} </div>
                             </div>
@@ -238,6 +262,15 @@
                 </div>
             {% endif %}
 
+            {% if x|is_instance_of:"index.models.ListNode" and x.group is null %}
+                <div class="todo-text-card" data-list-node-id="{{ x.id }}">
+                    <div style="display: flex; align-items:center; width: 100%;">
+                        <input class="m_checkbox" onchange="edit_list_node(this)" type="checkbox" name="" id="">
+                        <input class="todo-inp-field" oninput="edit_list_node(this)" style="font-size: medium;" placeholder="Text Here" value="{{ x.content }}" autocomplete="off" maxlength="255" type="text">
+                    </div>
+                    <div class="todo-text-status">Status: {{ x.last_action }} </div>
+                </div>
+            {% endif %}
 
         {% endfor %}
 
@@ -257,7 +290,7 @@
 <!-- 
         <div class="group">
             <div class="group-header">
-                <div class="group-btn" data-group-header-id="1">
+                <div class="group-btn" data-group-id="1">
                     <i class="fa-solid fa-angle-down" style="padding: 0 10px;"></i> Group <span style="padding-left: 10px; font-size: 14px;">3</span>
                 </div>
                 <span style="font-size: 14px; padding-left: 12px; text-decoration: underline;">Add Task</span>
@@ -291,8 +324,9 @@
     const project_slug = '{{ project.slug }}';
     const project_id = '{{ project.id }}';
     const current_username = '{{ request.user.username }}';
+    console.log(current_username)
 
-    const chatSocket = new WebSocket(
+    const socket = new WebSocket(
         'ws://'
         + window.location.host
         + '/ws/project/'
@@ -300,11 +334,11 @@
         + '/'
     );
 
-    chatSocket.onopen = function(e) {
+    socket.onopen = function(e) {
         console.log('onopen')
     }
 
-    chatSocket.onmessage = function(e){
+    socket.onmessage = function(e){
         data = e.data
         data = JSON.parse(data)
         console.log(data)
@@ -339,15 +373,70 @@
                 }
             }
 
+        }else if (action == 'add_group'){
+            // {"action": "add_group", "room": "test-project", "group_id": 1}
+            const todoItems = document.querySelector('.todo-items')
+            const group = document.createElement('div')
+            group.classList.add('group')
+            group.innerHTML = `
+                <div class="group-header" style="justify-content: space-between; width: 100%;">
+                    <div class="group-header">
+                        <div class="group-btn" data-group-id="${data['group_id']}">
+                            <i class="fa-solid fa-angle-down" style="padding: 0 10px;"></i>
+                            <span id="groupTitle">New Group</span>
+                            <span style="padding-left: 10px; font-size: 14px;">0</span>
+                        </div>
+                        <span style="font-size: 14px; padding-left: 12px; text-decoration: underline;">Add Task</span>
+                        <span onclick="toggle_target_object(this.nextElementSibling)" style="font-size: 14px; padding-left: 12px; text-decoration: underline;">Edit</span>
+                        <input oninput="link_inp_to_obj(this, this.parentElement.firstElementChild.firstElementChild.nextElementSibling)" maxlength="32" type="text" name="" id="edit-group-title" class="todo-inp-field" value="New Group" style="display: none; border-radius: 0; border-bottom: #8e8e8d 1px solid; margin: 0 10px">
+                    </div>
+                    <span onclick="delete_group(this)" style="font-size: 14px; margin-right: 25px; text-decoration: underline; color: red;">Delete Group</span>
+                </div>
+
+                <div class="group-content">
+                    
+                </div>
+                <hr width="100%" color="#e1dfdd">
+
+            `
+            todoItems.insertBefore(group, todoItems.firstChild)
+
+        }else if (action == 'edit_group_title'){
+            // {"action": "edit_group_title", "room": "test-project", "group_id": 1, "username": "qzen", "title": "new title"}
+            const group_headers = document.getElementsByClassName('group-header')
+            if (current_username != data['username']) {
+                for (var i = 0; i < group_headers.length; i++) {
+                    if (group_headers[i].firstElementChild.getAttribute('data-group-id') == data['group_id']) {
+                        var group_header = group_headers[i];
+                        const group_title = group_header.querySelector('#groupTitle')
+                        group_title.innerText = data['title']
+                        const edit_group_title_inp = group_header.querySelector('#edit-group-title')
+                        edit_group_title_inp.value = data['title']
+                        group_header.querySelector('.todo-text-status').innerText = `Status: Last edited by ${data['username']}`
+                        break;
+                    }
+                }
+
+            }
+        }else if (action == 'delete_group'){
+            // {"action": "delete_group", "room": "test-project", "group_id": 1, "username": "qzen"}
+            const group_headers = document.getElementsByClassName('group-header')
+            for (var i = 0; i < group_headers.length; i++) {
+                if (group_headers[i].firstElementChild.getAttribute('data-group-id') == data['group_id']) {
+                    var group_header = group_headers[i];
+                    group_header.parentElement.parentElement.remove()
+                    break;
+                }
+            }
         }
     }
 
-    chatSocket.onclose = function(e) {
+    socket.onclose = function(e) {
         console.log('onclose')
     }
 
     function edit_list_node(obj){
-        chatSocket.send(JSON.stringify({
+        socket.send(JSON.stringify({
             'action': 'edit_list_node_content',
             'room': project_slug,
             'list_node_id': obj.parentElement.parentElement.getAttribute('data-list-node-id'),
@@ -358,14 +447,11 @@
 
     }
 
-    function onchangetestfunc(obj){
-        console.log(obj)
-    }
 
     const add_list_node_btn = document.getElementById('add_list_node_btn')
 
     add_list_node_btn.addEventListener('click', function(){
-        chatSocket.send(JSON.stringify({
+        socket.send(JSON.stringify({
             'action': 'add_list_node',
             'room': project_slug,
             'username': current_username,
@@ -373,6 +459,24 @@
 
     });
 
+    const add_group_btn = document.getElementById('add_group_btn')
+
+    add_group_btn.addEventListener('click', function(){
+        socket.send(JSON.stringify({
+            'action': 'add_group',
+            'room': project_slug,
+            'username': current_username,
+        }))
+    })
+
+    function delete_group(obj){
+        socket.send(JSON.stringify({
+            'action': 'delete_group',
+            'room': project_slug,
+            'group_id': obj.parentElement.parentElement.querySelector('.group-btn').getAttribute('data-group-id'),
+            'username': current_username,
+        }))
+    }
 
     const project_edit_btn = document.getElementById('edit_btn')
     const edit_project_popup = document.getElementById('edit_project_popup')
@@ -491,7 +595,111 @@
     }
 
     // SOME STYLES
+    function toggle_options_panel(obj){
+        if (obj.parentElement.querySelector('div')){
+            obj.parentElement.querySelector('div').remove()
+        
+        }else{
+            const popup_panel = document.createElement('div')
+            const panel_width = 100
+            const panel_height = 100
+            
+            popup_panel.style.position = 'absolute'
+            
+            
+            
+            obj_pos = obj.getBoundingClientRect()
+            
+            popup_panel.style.width = panel_width + 'px'
+            popup_panel.style.height = 'auto' + ''
+            popup_panel_pos = popup_panel.getBoundingClientRect() 
+            popup_panel.style.left = obj_pos.left - panel_width - 30 + 'px'
+            popup_panel.style.top = obj_pos.top + 'px'
 
+            popup_panel.style.backgroundColor = 'white'
+            popup_panel.style.zIndex = '100'
+            popup_panel.style.boxShadow = '0px 0px 10px -3px rgba(0,0,0,0.35)'
+            popup_panel.style.borderRadius = '5px'
+            popup_panel.style.display = 'flex'
+            popup_panel.style.flexDirection = 'column'
+            popup_panel.style.gap = '7px'
+            popup_panel.style.padding = '12px'
+
+            popup_panel.innerHTML = `
+                <button onclick="toggle_groups_panel(this)" class="text-btn">Move</button>
+                <button class="text-btn">Delete</button>
+            `
+            
+            obj.parentElement.appendChild(popup_panel)
+
+            popup_panel.addEventListener('mouseleave', function(){
+                popup_panel.remove()
+            })
+        }
+        
+    }
+
+    function toggle_groups_panel(obj){
+        if(obj.parentElement.parentElement.querySelector('.group-panel')){
+            obj.parentElement.parentElement.querySelector('.group-panel').remove()
+        }else{
+            const group_panel = document.createElement('div')
+            const group_panel_width = 100
+
+            group_panel.classList.add('group-panel')
+            group_panel.style.position = 'absolute'
+            
+            group_panel.style.width = group_panel_width + 'px'
+            group_panel.style.height = 'auto'
+            
+            obj_pos = obj.getBoundingClientRect()
+
+            group_panel.style.left = obj_pos.left - group_panel_width - 30 + 'px'
+            group_panel.style.top = obj_pos.top + 'px'
+
+            
+            group_panel.style.backgroundColor = 'white'
+            group_panel.style.zIndex = '100'
+            group_panel.style.boxShadow = '0px 0px 10px -3px rgba(0,0,0,0.35)'
+            group_panel.style.borderRadius = '5px'
+            group_panel.style.display = 'flex'
+            group_panel.style.flexDirection = 'column'
+            group_panel.style.gap = '7px'
+            group_panel.style.padding = '12px'
+
+            group_panel.innerHTML = `
+                {% for group in groups %}    
+                    <button class="text-btn"> {{ group.title }} </button>
+                {% endfor %}
+            `
+
+            obj.parentElement.parentElement.appendChild(group_panel)
+
+            group_panel.addEventListener('mouseleave', function(){
+                group_panel.remove()
+            })
+        }
+    }
+
+    function toggle_target_object(obj){
+        if(obj.style.display == 'none'){
+            obj.style.display = 'block'
+        }else{
+            obj.style.display = 'none'
+        }
+    }
+
+    function link_inp_to_obj(inp, obj){
+        obj.innerHTML = inp.value
+
+        socket.send(JSON.stringify({
+            'action': 'edit_group_title',
+            'room': project_slug,
+            'group_id': obj.parentElement.getAttribute('data-group-id'),
+            'username': current_username,
+            'title': inp.value,
+        }))
+    }
 
 </script>
 

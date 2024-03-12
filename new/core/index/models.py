@@ -34,7 +34,7 @@ class Group(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     
     # Variable
-    title = models.CharField(max_length=64, default="New Group")
+    title = models.CharField(max_length=32, default="New Group")
     
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 

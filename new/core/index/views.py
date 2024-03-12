@@ -26,7 +26,7 @@ def project(request, slug):
     
 
     if (request.user.is_authenticated and request.user.profile.projects_allowed_in.filter(slug=slug).exists()) or request.user.profile == project.profile:
-        return render(request, 'index/project.html', {"project": project, 'objects': objects, "created_at": project.created_at.strftime('%d/%m/%Y')})
+        return render(request, 'index/project.html', {"project": project, 'groups': groups, 'objects': objects, "created_at": project.created_at.strftime('%d/%m/%Y')})
     
     else:
         return redirect('index:today')
