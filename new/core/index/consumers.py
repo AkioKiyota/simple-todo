@@ -44,6 +44,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return list_node.id
     
     @sync_to_async
+    def change_list_group(self, list_node_id, target_group_id):
+        list_node = ListNode.objects.get(id=list_node_id)
+        group = Group.objects.get(id=target_group_id)
+        list_node.group = group
+        list_node.last_action = f"Moved to {group.title} by {list_node.profile.user.username}"
+        list_node.save()
+        
+        return list_node.id
+    
+    @sync_to_async
     def add_group(self, username, room):
         project = Project.objects.get(slug=room)
         profile = Profile.objects.get(user__username=username)
@@ -107,7 +117,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'username': username,
                     'content': content,
                 })
-        
+
+        elif action == 'change_list_group':
+            list_node_id = data['list_node_id']
+            room = data['room']
+            username = data['username']
+            target_group_id = data['target_group_id']
+            
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'change_list_group_type',
+                    'action': action,
+                    
+                    'list_node_id': list_node_id,
+                    'room': room,
+                    'username': username,
+                    'target_group_id': target_group_id,
+                })
+
         elif action == 'add_group':
             room = data['room']
             username = data['username']
@@ -193,6 +221,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'room': room,
             'username': username,
             'content': content,    
+        }))
+    
+    async def change_list_group_type(self, event):
+        action = event['action']
+        
+        list_node_id = event['list_node_id']
+        room = event['room']
+        username = event['username']
+        target_group_id = event['target_group_id']
+        
+        await self.send(text_data=json.dumps({
+            'action': action,
+            
+            'list_node_id': list_node_id,
+            'room': room,
+            'username': username,
+            'target_group_id': target_group_id,
         }))
         
     

@@ -36,6 +36,7 @@
     }
     
     .m_btn{
+        padding: 10px;
         border: none;
         border-radius: 5px;
         background-color: #2c6cdc;
@@ -67,10 +68,10 @@
         flex-direction: column;
         align-items: start;
         gap: 10px;
-
+    
         padding: 10px;
     }
-
+    
     .todo-text-status{
         font-size: 12px;
         color: #8e8e8d;
@@ -85,11 +86,16 @@
     .todo-inp-field{
         padding: 10px;
         background-color: rgba(0, 0, 0, 0);
+        border: none;
         border-radius: 5px;
         flex-grow: 1;
         height: 0;
     }
-    
+
+    .todo-inp-field:focus{
+        outline: none;
+    }
+
     .group{
         display: flex;
         flex-direction: column;
@@ -107,7 +113,7 @@
         color: #292827;
     
     }
-
+    
     .group-content{
         display: flex;
         flex-direction: column;
@@ -128,7 +134,7 @@
         text-decoration: underline;
         cursor: pointer;
     }
-
+    
     .text-btn:hover{
         background-color: rgba(0, 0, 0, 0.1);
     }
@@ -155,23 +161,21 @@
         z-index: 100;
         box-shadow: -5px 0px 10px -3px rgba(0,0,0,0.35);
     }
-
+    
     .input-holder{
         display: flex;
         flex-direction: row;
         gap: 10px;
         width: 100%;
     }
-
+    
     .input-field{
         margin: 10px 0;
         padding: 10px;
         border: none;
         border-radius: 5px;
-
+    
     }
-
-
 
 
 </style>
@@ -263,13 +267,17 @@
             {% endif %}
 
             {% if x|is_instance_of:"index.models.ListNode" and x.group is null %}
-                <div class="todo-text-card" data-list-node-id="{{ x.id }}">
-                    <div style="display: flex; align-items:center; width: 100%;">
-                        <input class="m_checkbox" onchange="edit_list_node(this)" type="checkbox" name="" id="">
-                        <input class="todo-inp-field" oninput="edit_list_node(this)" style="font-size: medium;" placeholder="Text Here" value="{{ x.content }}" autocomplete="off" maxlength="255" type="text">
+            <div class="todo-text-card" data-list-node-id="{{ list_node.id }}">
+                <div style="display: flex; align-items:center; width: 100%;">
+                    <input class="m_checkbox" onchange="edit_list_node(this)" type="checkbox" name="" id="">
+                    <input class="todo-inp-field" oninput="edit_list_node(this)" style="font-size: medium;" placeholder="Text Here" value="{{ list_node.content }}" autocomplete="off" maxlength="255" type="text">
+                    <div class="card-optios">
+                        
+                        <button class="text-btn" onclick="toggle_options_panel(this)" style="padding: 0 5px; text-decoration: none;">...</button>
                     </div>
-                    <div class="todo-text-status">Status: {{ x.last_action }} </div>
                 </div>
+                <div class="todo-text-status">Status: {{ list_node.last_action }} </div>
+            </div>
             {% endif %}
 
         {% endfor %}
@@ -372,6 +380,18 @@
                     break;
                 }
             }
+
+        }else if (action == 'change_list_group'){
+            // {"action": "change_list_group", "room": "test-project", "list_node_id": 1, "group_id": 1}
+            const todo_text_cards = document.getElementsByClassName('todo-text-card')
+            for (var i = 0; i < todo_text_cards.length; i++) {
+                if (todo_text_cards[i].getAttribute('data-list-node-id') == data['list_node_id']) {
+                    var todo_text_card = todo_text_cards[i];
+                    todo_text_card.parentElement.parentElement.remove()
+                    break;
+                }
+            }
+
 
         }else if (action == 'add_group'){
             // {"action": "add_group", "room": "test-project", "group_id": 1}
