@@ -23,14 +23,14 @@
     <ul>
 
         {% for i in request.user.profile.projects.all %}
-            <a href="{% url 'index:project' i.slug %}"><li class="list-item"><i class="list_icon fa-regular fa-circle"></i> {{ i.title }} </li></a>
+            <a href="{% url 'index:project' i.id %}"><li class="list-item"><i class="list_icon fa-regular fa-circle"></i> {{ i.title }} {{ i.id }} </li></a>
         {% endfor %}
         <a href="{% url 'index:create_new_project' %}"><li style="color: #2564cf;" class="list-item"><i class="list_icon fa-regular fa-plus"></i> New Project</li></a>
     </ul>
     <hr width="85%" color="#e1dfdd">
     <ul>
         {% for i in request.user.profile.projects_allowed_in.all %}
-            <a href="{% url 'index:project' i.slug %}"><li class="list-item"><i class="list_icon fa-regular fa-circle"></i> {{ i.title }} </li></a>
+            <a href="{% url 'index:project' i.id %}"><li class="list-item"><i class="list_icon fa-regular fa-circle"></i> {{ i.title }} {{ i.id }} </li></a>
         {% endfor %}
 
     </ul>

@@ -187,7 +187,7 @@
 <div class="index">
     <div id="edit_project_popup">
         <div id="edit_project">
-            <form action="{% url 'index:edit_project_name' project.slug %}" method="post">
+            <form action="{% url 'index:edit_project_name' project.id %}" method="post">
                 {% csrf_token %}
                 <div class="input-holder">
                     <input class="input-field" type="text" name="title" id="new_project_title" placeholder="Project Title">
@@ -267,16 +267,16 @@
             {% endif %}
 
             {% if x|is_instance_of:"index.models.ListNode" and x.group is null %}
-            <div class="todo-text-card" data-list-node-id="{{ list_node.id }}">
+            <div class="todo-text-card" data-list-node-id="{{ x.id }}">
                 <div style="display: flex; align-items:center; width: 100%;">
                     <input class="m_checkbox" onchange="edit_list_node(this)" type="checkbox" name="" id="">
-                    <input class="todo-inp-field" oninput="edit_list_node(this)" style="font-size: medium;" placeholder="Text Here" value="{{ list_node.content }}" autocomplete="off" maxlength="255" type="text">
+                    <input class="todo-inp-field" oninput="edit_list_node(this)" style="font-size: medium;" placeholder="Text Here" value="{{ x.content }}" autocomplete="off" maxlength="255" type="text">
                     <div class="card-optios">
                         
                         <button class="text-btn" onclick="toggle_options_panel(this)" style="padding: 0 5px; text-decoration: none;">...</button>
                     </div>
                 </div>
-                <div class="todo-text-status">Status: {{ list_node.last_action }} </div>
+                <div class="todo-text-status">Status: {{ x.last_action }} </div>
             </div>
             {% endif %}
 
@@ -329,7 +329,6 @@
 {% block script %}
 
 <script>
-    const project_slug = '{{ project.slug }}';
     const project_id = '{{ project.id }}';
     const current_username = '{{ request.user.username }}';
     console.log(current_username)
@@ -338,7 +337,7 @@
         'ws://'
         + window.location.host
         + '/ws/project/'
-        + project_slug
+        + project_id
         + '/'
     );
 
@@ -382,12 +381,25 @@
             }
 
         }else if (action == 'change_list_group'){
-            // {"action": "change_list_group", "room": "test-project", "list_node_id": 1, "group_id": 1}
+            // {"action": "change_list_group", "room": "test-project", "list_node_id": 1, "target_group_id": 2}
             const todo_text_cards = document.getElementsByClassName('todo-text-card')
             for (var i = 0; i < todo_text_cards.length; i++) {
                 if (todo_text_cards[i].getAttribute('data-list-node-id') == data['list_node_id']) {
                     var todo_text_card = todo_text_cards[i];
-                    todo_text_card.parentElement.parentElement.remove()
+
+                    var old_group_id = todo_text_card.parentElement.parentElement.querySelector('.group-btn').getAttribute('data-group-id')
+
+                    const target_group = document.querySelector(`.group .group-header .group-btn[data-group-id="${data['target_group_id']}"]`).parentElement.parentElement.nextElementSibling;
+                    console.log(target_group.lastChild.innerText)
+                    target_group.lastChild.innerText = parseInt(target_group.lastChild.innerText) + 1
+                    console.log(target_group.lastChild.innerText)
+
+                    target_group.insertBefore(todo_text_card, target_group.firstChild)
+                    target_group_title = target_group.parentElement.querySelector('.group-header #groupTitle').innerText
+                    todo_text_card.querySelector('.todo-text-status').innerText = `Status: Moved to ${target_group_title} by ${current_username}`
+
+                    const previous_group = document.querySelector(`.group .group-header .group-btn[data-group-id="${old_group_id}"]`).parentElement.nextElementSibling;
+
                     break;
                 }
             }
@@ -455,10 +467,24 @@
         console.log('onclose')
     }
 
+    function change_list_group(obj){
+        target_group_id = obj.getAttribute('data-target-group-id')
+        list_node_id = obj.getAttribute('data-list-node-id')
+        socket.send(JSON.stringify({
+            'action': 'change_list_group',
+            'room': project_id,
+            'username': current_username,
+            'list_node_id': list_node_id,
+            'target_group_id': target_group_id,
+        }))
+
+
+    }
+
     function edit_list_node(obj){
         socket.send(JSON.stringify({
             'action': 'edit_list_node_content',
-            'room': project_slug,
+            'room': project_id,
             'list_node_id': obj.parentElement.parentElement.getAttribute('data-list-node-id'),
             'username': current_username,
             'content': obj.value,
@@ -467,13 +493,12 @@
 
     }
 
-
     const add_list_node_btn = document.getElementById('add_list_node_btn')
 
     add_list_node_btn.addEventListener('click', function(){
         socket.send(JSON.stringify({
             'action': 'add_list_node',
-            'room': project_slug,
+            'room': project_id,
             'username': current_username,
         }))
 
@@ -484,7 +509,7 @@
     add_group_btn.addEventListener('click', function(){
         socket.send(JSON.stringify({
             'action': 'add_group',
-            'room': project_slug,
+            'room': project_id,
             'username': current_username,
         }))
     })
@@ -492,7 +517,7 @@
     function delete_group(obj){
         socket.send(JSON.stringify({
             'action': 'delete_group',
-            'room': project_slug,
+            'room': project_id,
             'group_id': obj.parentElement.parentElement.querySelector('.group-btn').getAttribute('data-group-id'),
             'username': current_username,
         }))
@@ -540,6 +565,7 @@
         })
     }
 
+
     const add_allowed_user_btn = document.getElementById('add_allowed_user_btn')
     const user_to_be_allowed = document.getElementById('user_to_be_allowed')
     const error_text = document.getElementById('error_text')
@@ -552,7 +578,7 @@
             error_text.style.display = 'none'
             $.ajax({
                 type: 'POST',
-                url: '{% url "index:add_allowed_user" project.slug %}',
+                url: '{% url "index:add_allowed_user" project.id %}',
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
                     'username': user_to_be_allowed.value,
@@ -584,7 +610,7 @@
     function remove_allowed_user(username){
         $.ajax({
             type: 'POST',
-            url: '{% url "index:remove_allowed_user" project.slug %}',
+            url: '{% url "index:remove_allowed_user" project.id %}',
             data: {
                 'csrfmiddlewaretoken': '{{ csrf_token }}',
                 'username': username,
@@ -663,6 +689,8 @@
         if(obj.parentElement.parentElement.querySelector('.group-panel')){
             obj.parentElement.parentElement.querySelector('.group-panel').remove()
         }else{
+            const list_node_id = obj.parentElement.parentElement.parentElement.parentElement.getAttribute('data-list-node-id')
+
             const group_panel = document.createElement('div')
             const group_panel_width = 100
 
@@ -689,7 +717,7 @@
 
             group_panel.innerHTML = `
                 {% for group in groups %}    
-                    <button class="text-btn"> {{ group.title }} </button>
+                    <button onclick="change_list_group(this)" data-list-node-id="${list_node_id}" data-target-group-id="{{ group.id }}" class="text-btn"> {{ group.title }} </button>
                 {% endfor %}
             `
 
@@ -714,7 +742,7 @@
 
         socket.send(JSON.stringify({
             'action': 'edit_group_title',
-            'room': project_slug,
+            'room': project_id,
             'group_id': obj.parentElement.getAttribute('data-group-id'),
             'username': current_username,
             'title': inp.value,

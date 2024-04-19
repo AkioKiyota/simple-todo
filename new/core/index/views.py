@@ -13,8 +13,8 @@ def index(request):
 def today(request):
     return render(request, 'index/today.html', {"day": date.today().strftime('%d/%m/%Y')})
 
-def project(request, slug):
-    project = Project.objects.get(slug=slug)
+def project(request, id):
+    project = Project.objects.get(id=id)
     list_nodes = ListNode.objects.filter(project=project).all()
     groups = Group.objects.filter(project=project).all()
     
@@ -25,7 +25,7 @@ def project(request, slug):
     )
     
 
-    if (request.user.is_authenticated and request.user.profile.projects_allowed_in.filter(slug=slug).exists()) or request.user.profile == project.profile:
+    if (request.user.is_authenticated and request.user.profile.projects_allowed_in.filter(id=id).exists()) or request.user.profile == project.profile:
         return render(request, 'index/project.html', {"project": project, 'groups': groups, 'objects': objects, "created_at": project.created_at.strftime('%d/%m/%Y')})
     
     else:
@@ -35,22 +35,22 @@ def project(request, slug):
 def create_new_project(request):
     if request.user.is_authenticated:
         project = Project.objects.create(profile=request.user.profile, is_today=False, title="⚡ Your New Project!")
-        slug = project.slug
+        # slug = project.slug
         project.save()
     
-    return redirect('index:project', slug=slug)
+    return redirect('index:project', id=project.id)
 
-def edit_project_name(request, slug):
-    project = Project.objects.get(slug=slug)
-    if request.method == 'POST' and (request.user.profile.projects_allowed_in.filter(slug=slug).exists() or request.user.profile == project.profile):
+def edit_project_name(request, id):
+    project = Project.objects.get(id=id)
+    if request.method == 'POST' and (request.user.profile.projects_allowed_in.filter(id=id).exists() or request.user.profile == project.profile):
         project.title = request.POST['title']
         project.save()
-        return redirect('index:project', slug=slug)
+        return redirect('index:project', id=id)
     else:
         return HttpResponse("You are not allowed to access this page.")
 
-def add_allowed_user(request, slug):
-    project = Project.objects.get(slug=slug)
+def add_allowed_user(request, id):
+    project = Project.objects.get(id=id)
     if request.method == 'POST' and request.user.profile == project.profile:
         username = request.POST['username']
         if User.objects.filter(username=username).exists():
@@ -62,8 +62,8 @@ def add_allowed_user(request, slug):
     else:
         return JsonResponse({"status": "error", "message": "You are not allowed to do that!"})
 
-def remove_allowed_user(request, slug):
-    project = Project.objects.get(slug=slug)
+def remove_allowed_user(request, id):
+    project = Project.objects.get(id=id)
     if request.method == 'POST' and request.user.profile == project.profile:
         username = request.POST['username']
         if User.objects.filter(username=username).exists():

@@ -18,8 +18,9 @@ class Project(models.Model):
     
     def custom_populate_from(self):
         return self.title
-    
-    slug = AutoSlugField(populate_from=custom_populate_from, unique_with=['profile__user__username'])
+
+    # Use SLUG later.
+    # slug = AutoSlugField(populate_from=custom_populate_from, unique_with=['profile__user__username'])    
     
     # Variable
     title = models.CharField(max_length=64, default="⚡ New Project!")

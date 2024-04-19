@@ -7,7 +7,7 @@ from profiles.models import Profile
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['project_slug']
+        self.room_name = self.scope['url_route']['kwargs']['project_id']
         self.room_group_name = f'project_{self.room_name}'
         
         await self.channel_layer.group_add(
@@ -28,7 +28,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @sync_to_async
     def save_list_node(self, username, room):
         profile = Profile.objects.get(user__username=username)
-        project = Project.objects.get(slug=room)
+        project = Project.objects.get(id=room)
         new_list_node = ListNode.objects.create(profile=profile, project=project, last_action=f"Created by {username} ")
         new_list_node.save()
         
@@ -55,7 +55,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     
     @sync_to_async
     def add_group(self, username, room):
-        project = Project.objects.get(slug=room)
+        project = Project.objects.get(id=room)
         profile = Profile.objects.get(user__username=username)
         new_group = Group.objects.create(profile=profile, project=project, title="New Group")
         new_group.save()
@@ -120,9 +120,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         elif action == 'change_list_group':
             list_node_id = data['list_node_id']
+            target_group_id = data['target_group_id']
             room = data['room']
             username = data['username']
-            target_group_id = data['target_group_id']
+            
+            await self.change_list_group(list_node_id, target_group_id)
             
             await self.channel_layer.group_send(
                 self.room_group_name,
