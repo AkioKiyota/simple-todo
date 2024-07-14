@@ -40,7 +40,7 @@ services:
     restart: always
     build: 
       context: .
-    command: celery -A core worker -l INFO
+    command: celery -A core worker -l DEBUG
     volumes:
       - .:/django
     container_name: celery
